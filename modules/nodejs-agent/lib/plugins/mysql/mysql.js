@@ -17,9 +17,9 @@
 
 "use strict";
 
-const spanLayer = require("../../../trace/span-layer");
-const componentDefine = require("../../../trace/component-define");
-const Tags = require("../../../trace/tags");
+const spanLayer = require("../../trace/span-layer");
+const componentDefine = require("../../trace/component-define");
+const Tags = require("../../trace/tags");
 
 /**
  * @param {originModule} originModule
@@ -123,8 +123,15 @@ function enhanceQueryMethod(obj, instrumentation, contextManager) {
      */
     function queryInterceptor(original) {
         return function(sql, values, cb) {
-            let span = contextManager.createExitSpan("Mysql/query", connection.config.host +
-                ":" + connection.config.port);
+            if (!instrumentation.activeTraceContext) {
+                return original.apply(this, arguments);
+            }
+            let operationName = "Mysql/mysql";
+            if (sql) {
+                operationName = "Mysql/mysql/" + sql.split(" ", 1)[0].toLowerCase();
+            }
+            let span = contextManager.createExitSpan(operationName, connection.config.host +
+                ":" + connection.config.port, undefined, instrumentation.activeTraceContext);
             span.component(componentDefine.Components.MYSQL);
             span.spanLayer(spanLayer.Layers.DB);
             Tags.DB_TYPE.tag(span, "sql");

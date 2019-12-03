@@ -29,6 +29,11 @@ function AgentConfig() {
     this._instanceId = undefined;
     this._directServices = undefined;
     this._instanceUUID = undefined;
+    //If the operation name of the first span is included in this set, this segment should be ignored.
+    this._ignoreSuffixRegex = undefined;
+    //Negative or zero means off, means sampling N TraceSegment in 3 seconds tops.
+    this._sampleNumPer3Secs = 0;
+    this._sampleCount = 0;
 };
 
 AgentConfig.prototype.getServiceId = function() {
@@ -58,15 +63,51 @@ AgentConfig.prototype.setDirectServices = function(directServices) {
     this._directServices = directServices;
 };
 
-
 AgentConfig.prototype.instanceUUID = function() {
     return this._instanceUUID;
+};
+
+AgentConfig.prototype.getIgnoreSuffixRegex = function() {
+    return this._ignoreSuffixRegex;
+};
+AgentConfig.prototype.setIgnoreSuffixRegex = function(ignoreSuffixRegex) {
+    this._ignoreSuffixRegex = ignoreSuffixRegex;
+};
+
+AgentConfig.prototype.getSampleNumPer3Secs = function() {
+    return this._sampleNumPer3Secs;
+};
+AgentConfig.prototype.setSampleNumPer3Secs = function(sampleNumPer3Secs) {
+    this._sampleNumPer3Secs = sampleNumPer3Secs;
+};
+
+AgentConfig.prototype.getSampleCount = function() {
+    return this._sampleCount;
+};
+
+AgentConfig.prototype.isSampleLimit = function() {
+    if (this._sampleNumPer3Secs <= 0 || ++this._sampleCount <= this._sampleNumPer3Secs) {
+        return false;
+    }
+    return true;
 };
 
 AgentConfig.prototype.initConfig = function(agentOptions) {
     this._serviceName = process.env.SW_SERVICE_NAME || (agentOptions && agentOptions.serviceName) || "You Application";
     this._directServices = process.env.SW_DIRECT_SERVERS || (agentOptions && agentOptions.directServers) || "localhost:11800";
     this._instanceUUID = agentOptions.instanceUUID || uuid();
+    var ignoreSuffixStr = process.env.SW_IGNORE_SUFFIX || (agentOptions && agentOptions.ignoreSuffix) || "";
+    //example: .jpg,.jpeg,.js,.css,.png,.bmp,.gif,.ico,.mp3,.mp4,.html,.svg
+    if (ignoreSuffixStr && ignoreSuffixStr !== "") {
+        this._ignoreSuffixRegex = new RegExp((ignoreSuffixStr+'$').replace(/\./g,'\\\.').replace(/,/g, '$|'));
+    }
+    this._sampleNumPer3Secs = process.env.SW_SAMPLE_N_PER_3_SECS  || (agentOptions && agentOptions.sampleNumPer3Secs) || 0;
+    if (this._sampleNumPer3Secs > 0) {
+        let that = this;
+        setInterval(function() {
+            that._sampleCount = 0;
+        }, 3 * 1000);
+    }
 };
 
 

@@ -19,7 +19,7 @@
 
 module.exports = PluginManager;
 const logger = require("../logger");
-const OFFICER_SUPPORTED_MODULE = ["mysql", "http", "egg-core", "egg"];
+const OFFICER_SUPPORTED_MODULE = ["ioredis", "redis", "mysql", "mysql2", "http", "egg-core", "egg"];
 
 /**
  *

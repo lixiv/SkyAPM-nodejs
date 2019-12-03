@@ -33,9 +33,10 @@ const NOOP_SPAN = new NoopSpan(NOOP_TRACE_CONTEXT);
  * @author zhang xin
  */
 function ContextManager() {
-    this._activeTraceContext = undefined;
+    //todo: remove _activeTraceContext 
+    //this._activeTraceContext = undefined;
     this._dictionaryManager = dictionaryManager;
-    this._createSpan = function(spanOptions) {
+    this._createSpan = function(spanOptions, pTraceContext) {
         let traceContext = NOOP_TRACE_CONTEXT;
         if (!AgentConfig.getServiceId() ||
             !AgentConfig.getInstanceId()) {
@@ -43,46 +44,48 @@ function ContextManager() {
             return traceContext.span();
         }
 
-        if (typeof this._activeTraceContext == "NoopTraceContext") {
+        //if (typeof this._activeTraceContext == "NoopTraceContext") {
+        if (typeof pTraceContext == "NoopTraceContext") {
             logger.debug("context-manager",
                 "use the noop-span because of the parent trace context is NoopTraceContext.");
             return traceContext.span();
         }
 
-        traceContext = new TraceContext(this._activeTraceContext, spanOptions);
+        //traceContext = new TraceContext(this._activeTraceContext, spanOptions);
+        traceContext = new TraceContext(pTraceContext, spanOptions);
         return traceContext.span();
     };
 };
 
-ContextManager.prototype.inject = function(contextCarrier) {
-    if (!AgentConfig.getServiceId()) {
-        return;
-    }
+// ContextManager.prototype.inject = function(contextCarrier) {
+//     if (!AgentConfig.getServiceId()) {
+//         return;
+//     }
 
-    this._activeTraceContext.inject.apply(activeTraceContext, [contextCarrier]);
-};
+//     this._activeTraceContext.inject.apply(activeTraceContext, [contextCarrier]);
+// };
 
-ContextManager.prototype.extract = function(contextCarrier) {
-    if (!AgentConfig.getServiceId()) {
-        return;
-    }
+// ContextManager.prototype.extract = function(contextCarrier) {
+//     if (!AgentConfig.getServiceId()) {
+//         return;
+//     }
 
-    this._activeTraceContext.extract.apply(this._activeTraceContext, [contextCarrier]);
-};
+//     this._activeTraceContext.extract.apply(this._activeTraceContext, [contextCarrier]);
+// };
 
 ContextManager.prototype.finishSpan = function(span) {
     let finishTraceContext = span.traceContext();
     finishTraceContext.finish(span);
-    this.active(finishTraceContext.parentTraceContext.apply(finishTraceContext, []));
+    //this.active(finishTraceContext.parentTraceContext.apply(finishTraceContext, []));
 };
 
-ContextManager.prototype.active = function(traceContext) {
-    this._activeTraceContext = traceContext;
-};
+// ContextManager.prototype.active = function(traceContext) {
+//     this._activeTraceContext = traceContext;
+// };
 
-ContextManager.prototype.activeTraceContext = function() {
-    return this._activeTraceContext;
-};
+// ContextManager.prototype.activeTraceContext = function() {
+//     return this._activeTraceContext;
+// };
 
 ContextManager.prototype.createEntrySpan = function(
     operationName, contextCarrier) {
@@ -96,17 +99,18 @@ ContextManager.prototype.createEntrySpan = function(
         });
 
     let span = this._createSpan(spanOptions);
-    this.active(span.traceContext());
+    //active in http.js
+    //this.active(span.traceContext());
 
     if (contextCarrier) {
-        span.traceContext().extract.apply(span.traceContext(), [contextCarrier, this._agentConfig]);
+        span.traceContext().extract.apply(span.traceContext(), [contextCarrier]);
     }
 
     return span;
 };
 
 ContextManager.prototype.createExitSpan = function(
-    operationName, peerId, contextCarrier) {
+    operationName, peerId, contextCarrier, parentTraceContext) {
     if (!AgentConfig.getServiceId()) {
         logger.debug("context-manager", "use the noop-span before the application has been registered.");
         return NOOP_SPAN;
@@ -125,7 +129,7 @@ ContextManager.prototype.createExitSpan = function(
         spanOptions[key] = value;
     });
 
-    let span = this._createSpan(spanOptions);
+    let span = this._createSpan(spanOptions, parentTraceContext);
 
     if (contextCarrier) {
         span.traceContext().inject.apply(span.traceContext(), [contextCarrier]);
@@ -141,7 +145,7 @@ ContextManager.prototype.createLocalSpan = function(operationName) {
     };
 
     let span = this._createSpan(spanOptions);
-    this.active(span.traceContext());
+    //this.active(span.traceContext());
 
     return span;
 };

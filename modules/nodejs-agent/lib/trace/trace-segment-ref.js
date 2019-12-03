@@ -37,7 +37,7 @@ function TraceSegmentRef(contextCarrier) {
     this._traceSegmentId = new ID({
         part1: idSegment[0],
         part2: idSegment[1],
-        part3: idSegment[2],
+        part3: idSegment[2]
     });
     this._spanId = contextCarrier.getSpanId();
 
@@ -66,7 +66,7 @@ function TraceSegmentRef(contextCarrier) {
     this._primaryDistributedTraceId = new ID({
         part1: primaryDistributedTraceId[0],
         part2: primaryDistributedTraceId[1],
-        part3: primaryDistributedTraceId[2],
+        part3: primaryDistributedTraceId[2]
     });
 }
 

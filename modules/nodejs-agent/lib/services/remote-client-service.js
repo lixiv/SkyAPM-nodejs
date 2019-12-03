@@ -118,7 +118,7 @@ RemoteClient.prototype.registerNetwork = function(networkes, callback) {
 RemoteClient.prototype.registerEndpoint = function(endpoints, callback) {
     let that = this;
 
-    let endpointsParameteres = new RegisterParameteres.Enpoints();
+    let endpointsParameteres = new RegisterParameteres.Endpoints();
     endpoints.forEach(function(endpoint) {
         let endpointParameter = new RegisterParameteres.Endpoint();
         endpointParameter.setServiceid(endpoint.serviceId());

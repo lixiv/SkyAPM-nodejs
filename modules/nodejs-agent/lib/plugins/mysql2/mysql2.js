@@ -17,9 +17,9 @@
 
 "use strict";
 
-const spanLayer = require("../../../trace/span-layer");
-const componentDefine = require("../../../trace/component-define");
-const Tags = require("../../../trace/tags");
+const spanLayer = require("../../trace/span-layer");
+const componentDefine = require("../../trace/component-define");
+const Tags = require("../../trace/tags");
 
 /**
  * @param {originModule} originModule
@@ -29,7 +29,8 @@ const Tags = require("../../../trace/tags");
  * @author zhang xin
  */
 module.exports = function(originModule, instrumentation, contextManager) {
-    instrumentation.enhanceMethod(originModule, "query", wrapQuery);
+    instrumentation.enhanceMethod(originModule.Connection.prototype, "query", wrapQuery);
+    instrumentation.enhanceMethod(originModule.Connection.prototype, "execute", wrapQuery);
 
     /**
      *
@@ -38,6 +39,10 @@ module.exports = function(originModule, instrumentation, contextManager) {
      */
     function wrapQuery(origin) {
         return function(sql, values, cb) {
+            if (!instrumentation.activeTraceContext) {
+                return origin.apply(this, arguments);
+            }
+
             let sqlStr = undefined;
             let hasCallback = false;
 
@@ -55,8 +60,12 @@ module.exports = function(originModule, instrumentation, contextManager) {
                 sqlStr = sql.sql;
             }
 
-            let span = contextManager.createExitSpan("Mysql/query", this.config.host +
-                ":" + this.config.port);
+            let operationName = "Mysql/mysql2";
+            if (sqlStr) {
+                operationName = "Mysql/mysql2/" + sqlStr.split(" ", 1)[0].toLowerCase();
+            }
+            let span = contextManager.createExitSpan(operationName, this.config.host +
+                ":" + this.config.port, undefined, instrumentation.activeTraceContext);
             span.component(componentDefine.Components.MYSQL);
             span.spanLayer(spanLayer.Layers.DB);
             Tags.DB_TYPE.tag(span, "sql");

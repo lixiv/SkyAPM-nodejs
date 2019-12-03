@@ -21,6 +21,8 @@ const onFinished = require("on-finished");
 const ContextCarrier = require("../../trace/context-carrier");
 const layerDefine = require("../../trace/span-layer");
 const componentDefine = require("../../trace/component-define");
+const agentConfig = require("../../config");
+const suffixPattern = agentConfig.getIgnoreSuffixRegex();
 
 /**
  *
@@ -50,6 +52,14 @@ module.exports = function(httpModule, instrumentation, contextManager) {
         return endpointName;
     }
 
+    function shouldIgnore(endpointName) {
+        //var suffixPattern = /\.jpg$|\.jpeg$|\.js$|\.css$|\.png$|\.bmp$|\.gif$|\.ico$|\.mp3$|\.mp4$|\.html$|\.svg$/;
+        if (suffixPattern && endpointName && suffixPattern.test(filterParams(endpointName))) {
+            return true;
+        }
+        return false;
+    }
+
     /**
      *
      * @param {original} original
@@ -57,7 +67,7 @@ module.exports = function(httpModule, instrumentation, contextManager) {
      */
     function wrapEmit(original) {
         return function(event, req, res) {
-            if (event === "request") {
+            if (event === "request" && !shouldIgnore(req.url)) {
                 let contextCarrier = new ContextCarrier();
                 contextCarrier.fetchBy(function(key) {
                     if (req.headers.hasOwnProperty(key)) {
@@ -66,7 +76,14 @@ module.exports = function(httpModule, instrumentation, contextManager) {
                     return undefined;
                 });
 
+                //sample control
+                if (contextCarrier.getSample() !== '1' && agentConfig.isSampleLimit()) {
+                    instrumentation.activeTraceContext = null;
+                    return original.apply(this, arguments);
+                }
+
                 let span = contextManager.createEntrySpan(filterParams(req.url), contextCarrier);
+                instrumentation.activeTraceContext = span.traceContext();
                 span.component(componentDefine.Components.HTTP);
                 span.spanLayer(layerDefine.Layers.HTTP);
                 onFinished(res, function(err) {
@@ -93,8 +110,13 @@ module.exports = function(httpModule, instrumentation, contextManager) {
      */
     function wrapRequest(original) {
         return function(options, callback) {
+            if (!instrumentation.activeTraceContext) {
+                return original.apply(this, arguments);
+            }
+
             let contextCarrier = new ContextCarrier();
-            let span = contextManager.createExitSpan(options.path, options.host + ":" + options.port, contextCarrier);
+            //let span = contextManager.createExitSpan(options.path, options.host + ":" + options.port, contextCarrier);
+            let span = contextManager.createExitSpan(filterParams(options.path), options.host + ":" + options.port, contextCarrier, instrumentation.activeTraceContext);
             contextCarrier.pushBy(function(key, value) {
                 if (!options.hasOwnProperty("headers")) {
                     options.headers = {};

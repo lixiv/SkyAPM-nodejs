@@ -51,6 +51,7 @@ ContextCarrier.prototype.deserialize = function(traceContext) {
         return this;
     }
 
+    this._sample = traceContextSegment[0];
     this._primaryDistributedTraceId = Base64.decode(traceContextSegment[1]);
     this._traceSegmentId = Base64.decode(traceContextSegment[2]);
     this._spanId = traceContextSegment[3];
@@ -75,6 +76,10 @@ ContextCarrier.prototype.setSpanId = function(spanId) {
 
 ContextCarrier.prototype.getSpanId = function() {
     return this._spanId;
+};
+
+ContextCarrier.prototype.getSample = function() {
+    return this._sample;
 };
 
 ContextCarrier.prototype.setParentApplicationInstanceId = function(parentApplicationInstanceId) {

@@ -23,7 +23,9 @@
  */
 function TraceSegmentCachePool() {
     this._bucket = [];
-    this._bucketSize = Number.isSafeInteger(256);
+    //this._bucketSize = Number.isSafeInteger(256);
+    //批量上报
+    this._bucketSize = 256;
     this._timeout = undefined;
     this._consumer = undefined;
     this._flushInterval = 1000;

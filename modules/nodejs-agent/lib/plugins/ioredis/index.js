@@ -20,13 +20,12 @@
 const Plugin = require("../plugin");
 const semver = require("semver");
 
-
-module.exports = new Plugin("mysql-plugin", "mysql", [{
-    _name: "v1",
-    _description: "Only enhancements to version 1.x",
-    _enhanceModules: ["mysql"],
+module.exports = new Plugin("ioredis-plugin", "ioredis", [{
+    _name: "",
+    _description: "Only enhancements to ioredis",
+    _enhanceModules: ["ioredis"],
     canEnhance: function(version, enhanceFile) {
-        if (this._enhanceModules.indexOf(enhanceFile) > -1 && semver.satisfies(version, "^2.0.0")) {
+        if (this._enhanceModules.indexOf(enhanceFile) > -1 && semver.satisfies(version, ">=2.0.0 <5.0.0")) {
             return true;
         }
         return false;
@@ -35,4 +34,3 @@ module.exports = new Plugin("mysql-plugin", "mysql", [{
         return require("./" + enhanceFile);
     },
 }]);
-

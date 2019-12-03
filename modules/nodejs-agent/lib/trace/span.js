@@ -98,11 +98,13 @@ Span.prototype.isLocalSpan = function() {
 };
 
 Span.prototype.component = function(component) {
-    if (typeof component == "OfficeComponent") {
-        this._componentId = component.getId();
-    } else {
-        this._componentName = component;
-    }
+    //if (typeof component == "OfficeComponent") {
+    this._componentId = component.getId();
+    //this._componentName = component.getName();
+    //this._componentName = 'Redis';
+    //} else {
+    //    this._componentName = component;
+    //}
 };
 
 Span.prototype.spanLayer = function(spanLayer) {
@@ -128,10 +130,6 @@ Span.prototype.fetchOperationNameInfo = function(
     } else {
         return registerCallback(this._operationId);
     }
-};
-
-Span.prototype.component = function(component) {
-    this._componentId = component.getId();
 };
 
 Span.prototype.transform = function() {

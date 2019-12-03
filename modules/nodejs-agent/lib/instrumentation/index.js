@@ -26,6 +26,8 @@ const logger = require("../logger");
  * @author zhang xin
  */
 function Instrumentation() {
+    //add by lxw
+    require('./async-hooks')(this)
 }
 
 /**
@@ -102,25 +104,27 @@ Instrumentation.prototype.enhanceCallback = function(
             "The Callback method won't be enhance because of TraceContext is undefined.");
         return originCallBack;
     }
+    //add by lxw, just return originCallBack, no need active previous traceContext
+    return originCallBack;
 
-    let runningTraceContext = traceContext;
-    let runningSpan = runningTraceContext.span();
+    // let runningTraceContext = traceContext;
+    // let runningSpan = runningTraceContext.span();
 
-    return function() {
-        let previousTraceContext = contextManager.activeTraceContext();
-        contextManager.active(runningTraceContext);
-        let result = undefined;
-        try {
-            result = originCallBack.apply(this, arguments);
-        } catch (err) {
-            runningSpan.errorOccurred();
-            runningSpan.log(err);
-            throw err;
-        } finally {
-            contextManager.active(previousTraceContext);
-        }
-        return result;
-    };
+    // return function() {
+    //     let previousTraceContext = contextManager.activeTraceContext();
+    //     contextManager.active(runningTraceContext);
+    //     let result = undefined;
+    //     try {
+    //         result = originCallBack.apply(this, arguments);
+    //     } catch (err) {
+    //         runningSpan.errorOccurred();
+    //         runningSpan.log(err);
+    //         throw err;
+    //     } finally {
+    //         contextManager.active(previousTraceContext);
+    //     }
+    //     return result;
+    // };
 };
 
 Instrumentation.prototype.isFunction = function(funktion) {
